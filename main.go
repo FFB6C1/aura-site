@@ -1,7 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"github.com/ffb6c1/aura-site/internal/file"
+)
 
 func main() {
-	fmt.Println("Hello World")
+	file.WriteFile()
 }
