@@ -1,5 +1,0 @@
-[link1](internal - page1)
-[link2](http://www.google.com)
-[link3](http://www.google.com)
-[link4](http://www.google.com)
-[link5](http://www.google.com)
