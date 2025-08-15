@@ -24,7 +24,10 @@ func ConvertFilesFromFolder(importPath string, exportPath string) error {
 	if err != nil {
 		return err
 	}
-	htmlFiles := converter(markdownFiles)
+	htmlFiles, err := converter(markdownFiles)
+	if err != nil {
+		return err
+	}
 	if err := writeFiles(htmlFiles, exportPath); err != nil {
 		return err
 	}
@@ -69,17 +72,23 @@ func isMarkdown(name string) (string, bool) {
 	return strings.CutSuffix(name, ".md")
 }
 
-func converter(markdownFiles []markdownFile) []htmlFile {
+func converter(markdownFiles []markdownFile) ([]htmlFile, error) {
 	htmlFiles := make([]htmlFile, 0, len(markdownFiles))
+	wrapper, err := os.ReadFile("components/html/wrapper.html")
+	wrapperParts := strings.Split(string(wrapper), "!!!CONTENT!!!")
+	if err != nil {
+		return nil, fmt.Errorf("could not open html wrapper: %w", err)
+	}
 	for _, file := range markdownFiles {
 		content := markdown.Convert(file.content)
+
 		html := htmlFile{
 			name:    file.name + ".html",
-			content: content,
+			content: wrapperParts[0] + content + wrapperParts[1],
 		}
 		htmlFiles = append(htmlFiles, html)
 	}
-	return htmlFiles
+	return htmlFiles, nil
 }
 
 func writeFiles(htmlFiles []htmlFile, path string) error {
