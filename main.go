@@ -8,8 +8,7 @@ import (
 
 func main() {
 	app := app.New()
-	win := app.NewWindow("Test App")
-	//button := widget.NewButton("convert md to html", file.ConvertFile)
+	win := app.NewWindow("aura-site")
 
 	win.SetContent(gui.MainScreen(win))
 	win.Resize(fyne.NewSize(640, 480))
