@@ -1,9 +1,17 @@
 package main
 
 import (
-	"github.com/ffb6c1/aura-site/internal/file"
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
+	"github.com/ffb6c1/aura-site/internal/gui"
 )
 
 func main() {
-	file.WriteFile()
+	app := app.New()
+	win := app.NewWindow("Test App")
+	//button := widget.NewButton("convert md to html", file.ConvertFile)
+
+	win.SetContent(gui.MainScreen(win))
+	win.Resize(fyne.NewSize(640, 480))
+	win.ShowAndRun()
 }

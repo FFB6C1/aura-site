@@ -6,6 +6,10 @@ import (
 	"strings"
 )
 
+func Convert(text string) string {
+	return applyBlocks(text, "converter")
+}
+
 func applyBlocks(text string, caller string) string {
 	blocks := strings.Split(text, "\n\n")
 	for i := range len(blocks) {

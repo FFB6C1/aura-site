@@ -2,40 +2,100 @@ package file
 
 import (
 	"fmt"
-	"log"
 	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/ffb6c1/aura-site/internal/markdown"
 )
 
-func GetFilesFromSrc() {
-	dir, err := os.Open("test-site/src/sections")
+type markdownFile struct {
+	name    string
+	content string
+}
+
+type htmlFile struct {
+	name    string
+	content string
+}
+
+func ConvertFilesFromFolder(importPath string, exportPath string) error {
+	markdownFiles, err := readFiles(importPath)
 	if err != nil {
-		fmt.Println("Something went wrong: " + err.Error())
-		os.Exit(1)
+		return err
+	}
+	htmlFiles := converter(markdownFiles)
+	if err := writeFiles(htmlFiles, exportPath); err != nil {
+		return err
+	}
+	return nil
+}
+
+func readFiles(path string) ([]markdownFile, error) {
+	dir, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("could not open directory: %w", err)
+	}
+	defer dir.Close()
+
+	files, err := dir.ReadDir(-1)
+	if err != nil {
+		return nil, fmt.Errorf("could not read files from directory: %w", err)
 	}
 
-	files, err := dir.Readdir(-1)
-	if err != nil {
-		fmt.Println("Something went wrong: " + err.Error())
-		os.Exit(1)
-	}
+	markdownFiles := make([]markdownFile, 0, len(files))
 
 	for _, file := range files {
-		fmt.Println(file.Name())
+		if filename, markdown := isMarkdown(file.Name()); markdown {
+			path := filepath.Join(path, file.Name())
+			content, err := readFile(path)
+			if err != nil {
+				return nil, fmt.Errorf("could not read file %s: %w", path, err)
+			}
+
+			mdFile := markdownFile{
+				name:    filename,
+				content: content,
+			}
+			markdownFiles = append(markdownFiles, mdFile)
+		}
+
 	}
+
+	return markdownFiles, nil
 }
 
-func ReadFile() {
-	content, err := os.ReadFile("test-site/src/test-file.md")
+func isMarkdown(name string) (string, bool) {
+	return strings.CutSuffix(name, ".md")
+}
+
+func converter(markdownFiles []markdownFile) []htmlFile {
+	htmlFiles := make([]htmlFile, 0, len(markdownFiles))
+	for _, file := range markdownFiles {
+		content := markdown.Convert(file.content)
+		html := htmlFile{
+			name:    file.name + ".html",
+			content: content,
+		}
+		htmlFiles = append(htmlFiles, html)
+	}
+	return htmlFiles
+}
+
+func writeFiles(htmlFiles []htmlFile, path string) error {
+	for _, file := range htmlFiles {
+		fullPath := filepath.Join(path, file.name)
+		if err := os.WriteFile(fullPath, []byte(file.content), 0o777); err != nil {
+			return fmt.Errorf("error writing file %s: %w", file.name, err)
+		}
+	}
+	return nil
+}
+
+func readFile(path string) (string, error) {
+	content, err := os.ReadFile(path)
 	if err != nil {
-		fmt.Println("Something went wrong: " + err.Error())
-		os.Exit(1)
+		return "", err
 	}
-	fmt.Println(string(content))
-}
-
-func WriteFile() {
-	testData := "#Hello\n\nthis is markdown"
-	if err := os.WriteFile("test-site/src/test-write.md", []byte(testData), 0666); err != nil {
-		log.Fatal("Could not write file.")
-	}
+	return string(content), nil
 }
