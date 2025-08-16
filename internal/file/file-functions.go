@@ -9,16 +9,6 @@ import (
 	"github.com/ffb6c1/aura-site/internal/markdown"
 )
 
-type markdownFile struct {
-	name    string
-	content string
-}
-
-type htmlFile struct {
-	name    string
-	content string
-}
-
 func ConvertFilesFromFolder(importPath string, exportPath string) error {
 	markdownFiles, err := readFiles(importPath)
 	if err != nil {
@@ -34,7 +24,7 @@ func ConvertFilesFromFolder(importPath string, exportPath string) error {
 	return nil
 }
 
-func readFiles(path string) ([]markdownFile, error) {
+func readFiles(path string) (map[string]string, error) {
 	dir, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("could not open directory: %w", err)
@@ -46,7 +36,7 @@ func readFiles(path string) ([]markdownFile, error) {
 		return nil, fmt.Errorf("could not read files from directory: %w", err)
 	}
 
-	markdownFiles := make([]markdownFile, 0, len(files))
+	markdownFiles := make(map[string]string, len(files))
 
 	for _, file := range files {
 		if filename, markdown := isMarkdown(file.Name()); markdown {
@@ -56,11 +46,7 @@ func readFiles(path string) ([]markdownFile, error) {
 				return nil, fmt.Errorf("could not read file %s: %w", path, err)
 			}
 
-			mdFile := markdownFile{
-				name:    filename,
-				content: content,
-			}
-			markdownFiles = append(markdownFiles, mdFile)
+			markdownFiles[filename] = content
 		}
 
 	}
@@ -72,30 +58,45 @@ func isMarkdown(name string) (string, bool) {
 	return strings.CutSuffix(name, ".md")
 }
 
-func converter(markdownFiles []markdownFile) ([]htmlFile, error) {
-	htmlFiles := make([]htmlFile, 0, len(markdownFiles))
+func converter(markdownFiles map[string]string) (map[string]string, error) {
+	htmlFiles := make(map[string]string)
 	wrapper, err := os.ReadFile("components/html/wrapper.html")
 	wrapperParts := strings.Split(string(wrapper), "!!!CONTENT!!!")
 	if err != nil {
 		return nil, fmt.Errorf("could not open html wrapper: %w", err)
 	}
-	for _, file := range markdownFiles {
-		content := markdown.Convert(file.content)
+	nav := markdownFiles["nav"]
+	delete(markdownFiles, "nav")
+	if nav != "" {
+		nav = markdown.Convert(nav) + "\n\n"
+	}
 
-		html := htmlFile{
-			name:    file.name + ".html",
-			content: wrapperParts[0] + content + wrapperParts[1],
+	for name, content := range markdownFiles {
+		convertedContent := markdown.Convert(content)
+
+		pageParts := []string{
+			nav, convertedContent,
 		}
-		htmlFiles = append(htmlFiles, html)
+
+		htmlFiles[name+".html"] = pageBuilder(pageParts, wrapperParts)
+
 	}
 	return htmlFiles, nil
 }
 
-func writeFiles(htmlFiles []htmlFile, path string) error {
-	for _, file := range htmlFiles {
-		fullPath := filepath.Join(path, file.name)
-		if err := os.WriteFile(fullPath, []byte(file.content), 0o777); err != nil {
-			return fmt.Errorf("error writing file %s: %w", file.name, err)
+func pageBuilder(pageParts []string, wrapperParts []string) string {
+	fullPage := ""
+	for _, part := range pageParts {
+		fullPage += part
+	}
+	return wrapperParts[0] + fullPage + wrapperParts[1]
+}
+
+func writeFiles(htmlFiles map[string]string, path string) error {
+	for name, content := range htmlFiles {
+		fullPath := filepath.Join(path, name)
+		if err := os.WriteFile(fullPath, []byte(content), 0o777); err != nil {
+			return fmt.Errorf("error writing file %s: %w", name, err)
 		}
 	}
 	return nil
