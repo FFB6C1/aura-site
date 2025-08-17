@@ -21,6 +21,9 @@ func ConvertFilesFromFolder(importPath string, exportPath string) error {
 	if err := writeFiles(htmlFiles, exportPath); err != nil {
 		return err
 	}
+	if err := getCss(exportPath); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -68,11 +71,11 @@ func converter(markdownFiles map[string]string) (map[string]string, error) {
 	nav := markdownFiles["nav"]
 	delete(markdownFiles, "nav")
 	if nav != "" {
-		nav = markdown.Convert(nav) + "\n\n"
+		nav = converterSpecial(nav, "nav") + "\n\n"
 	}
 
 	for name, content := range markdownFiles {
-		convertedContent := markdown.Convert(content)
+		convertedContent := fmt.Sprintf("<div id=\"%s\">%s</div>", name, markdown.Convert(content))
 
 		pageParts := []string{
 			nav, convertedContent,
@@ -82,6 +85,13 @@ func converter(markdownFiles map[string]string) (map[string]string, error) {
 
 	}
 	return htmlFiles, nil
+}
+
+func converterSpecial(content string, page string) string {
+	if page == "nav" {
+		content = "<nav>" + markdown.Convert(content) + "</nav>"
+	}
+	return content
 }
 
 func pageBuilder(pageParts []string, wrapperParts []string) string {
@@ -108,4 +118,19 @@ func readFile(path string) (string, error) {
 		return "", err
 	}
 	return string(content), nil
+}
+
+func getCss(path string) error {
+	css, err := readFile("components/css/default.css")
+	if err != nil {
+		return err
+	}
+
+	filepath := filepath.Join(path, "styles.css")
+
+	if err := os.WriteFile(filepath, []byte(css), 0o777); err != nil {
+		return fmt.Errorf("error writing file styles.css: %w", err)
+	}
+
+	return nil
 }

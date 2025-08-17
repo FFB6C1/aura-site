@@ -1,0 +1,16 @@
+nav {
+    text-align: center;
+    background-color: darkslategray;
+    color: antiquewhite;
+    width: 100vw;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    margin: auto;
+    display: block;
+}
+
+nav>p>a {
+    padding: 20px;
+    color: antiquewhite;
+}
