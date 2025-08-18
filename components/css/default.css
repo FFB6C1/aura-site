@@ -1,3 +1,11 @@
+/*
+    name: default
+    required:
+    optional: nav, sidebar, footer
+    priority: nav, content, sidebar, footer
+    about: Default theme, blue-grey and white. 2-column layout if sidebar element included. All elements are optional.
+*/
+
 nav {
     text-align: center;
     background-color: darkslategray;

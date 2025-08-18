@@ -32,7 +32,7 @@ func TestItalic(t *testing.T) {
 
 	testText := applyItalic(text)
 	if testText != expected {
-		t.Fatal(fmt.Sprintf("Expected: %s, Result: %s", expected, testText))
+		t.Fatalf("Expected: %s, Result: %s", expected, testText)
 	}
 }
 

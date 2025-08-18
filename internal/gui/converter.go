@@ -48,7 +48,9 @@ func MainScreen(window fyne.Window) fyne.CanvasObject {
 		}, window)
 	})
 	convertButton := widget.NewButton("convert .md files to .html", func() {
-		file.ConvertFilesFromFolder(sourceFolder, destFolder)
+		if err := file.BuildSite(sourceFolder, destFolder, "components/css/default.css"); err != nil {
+			log.Fatal(err.Error())
+		}
 	})
 
 	return container.NewVBox(sourceLabel, destLabel, sourceFolderButton, destFolderButton, convertButton)

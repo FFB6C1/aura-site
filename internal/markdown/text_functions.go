@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-func Convert(text string) string {
-	return applyBlocks(text, "converter")
+func Convert(text, name string) string {
+	return applyBlocks(text, name)
 }
 
 func applyBlocks(text string, caller string) string {
@@ -32,6 +32,9 @@ func applyInline(text string) string {
 
 func blockChecker(text string, caller string) string {
 	stripped := strings.TrimLeft(text, " ")
+	if stripped == "" {
+		return ""
+	}
 	if stripped == "---" {
 		return blockToHorizontalLine(stripped)
 	}
@@ -52,6 +55,9 @@ func blockChecker(text string, caller string) string {
 	}
 	if stripped[0] == '-' || stripped[0] == '*' || stripped[0] == '+' {
 		return blockToUnorderedList(stripped)
+	}
+	if caller == "nav" {
+		return "<nav>" + stripped + "</nav>\n"
 	}
 	if caller == "quote" {
 		return stripped
