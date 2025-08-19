@@ -14,6 +14,14 @@ type themeSettings struct {
 	full     string
 }
 
+func (t themeSettings) GetRequired() []string {
+	return t.required
+}
+
+func getSettings(css string) themeSettings {
+	return splitCommentToSettings(splitComment(getComment(css)), css)
+}
+
 func getComment(css string) string {
 	return strings.Trim(strings.Split(css, "*/")[0], "/* \n")
 }
@@ -35,11 +43,18 @@ func splitComment(comment string) map[string]string {
 func splitCommentToSettings(commentMap map[string]string, css string) themeSettings {
 	settings := themeSettings{
 		name:     commentMap["name"],
-		required: strings.Split(commentMap["required"], ", "),
-		optional: strings.Split(commentMap["optional"], ", "),
-		priority: strings.Split(commentMap["priority"], ", "),
+		required: omitOrSplit(commentMap["required"], ", "),
+		optional: omitOrSplit(commentMap["optional"], ", "),
+		priority: omitOrSplit(commentMap["priority"], ", "),
 		about:    commentMap["about"],
 		full:     css,
 	}
 	return settings
+}
+
+func omitOrSplit(text, split string) []string {
+	if text == "" {
+		return []string{}
+	}
+	return strings.Split(text, split)
 }

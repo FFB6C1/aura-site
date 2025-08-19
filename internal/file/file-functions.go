@@ -9,6 +9,34 @@ import (
 	"github.com/ffb6c1/aura-site/internal/markdown"
 )
 
+func GetThemes() (map[string]themeSettings, []string, error) {
+	themes := map[string]themeSettings{}
+	themeNames := []string{}
+	files, err := os.ReadDir("components/css")
+	if err != nil {
+		return nil, nil, err
+	}
+	fmt.Println("hi!")
+
+	for _, file := range files {
+		if checkType(file.Name(), ".css") {
+			theme, err := readFile(filepath.Join("components/css", file.Name()))
+			if err != nil {
+				return nil, nil, err
+			}
+			settings := getSettings(theme)
+			themes[settings.name] = settings
+			themeNames = append(themeNames, settings.name)
+		}
+	}
+
+	return themes, themeNames, nil
+}
+
+func checkType(filename, filetype string) bool {
+	return strings.HasSuffix(filename, filetype)
+}
+
 func getWrapper() ([]string, error) {
 	wrapper, err := readFile("components/html/wrapper.html")
 	if err != nil {

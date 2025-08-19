@@ -81,7 +81,7 @@ func buildTemplate(path string, themeSettings themeSettings) (pageTemplate, erro
 }
 
 func requiredChecker(required []string, files map[string]string) (string, bool) {
-	if len(required) == 1 && required[0] == "" {
+	if len(required) == 0 {
 		return "", true
 	}
 	for _, item := range required {
