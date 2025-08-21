@@ -16,7 +16,6 @@ func GetThemes() (map[string]themeSettings, []string, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	fmt.Println("hi!")
 
 	for _, file := range files {
 		if checkType(file.Name(), ".css") {

@@ -16,12 +16,16 @@ func MainScreen(window fyne.Window) fyne.CanvasObject {
 	destFolder := ""
 
 	themes, themeNames, err := file.GetThemes()
+	theme := ""
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 	requiredLabel := widget.NewLabel("Required files for chosen theme:")
+	absentLabel := widget.NewLabel("")
+	absentLabel.Importance = widget.HighImportance
 
-	themeSelector := widget.NewSelect(themeNames, func(theme string) {
+	themeSelector := widget.NewSelect(themeNames, func(chosenTheme string) {
+		theme = chosenTheme
 		reqFiles := ""
 		if len(themes[theme].GetRequired()) == 0 {
 			reqFiles = "none"
@@ -49,6 +53,20 @@ func MainScreen(window fyne.Window) fyne.CanvasObject {
 
 			sourceFolder = list.Path()
 			sourceLabel.SetText(sourceFolder)
+
+			haveRequired, absent, err := (themes[theme].CheckRequired(sourceFolder))
+			if err != nil {
+				log.Fatal(err)
+			}
+			if !haveRequired {
+				absentFiles := ""
+				for _, file := range absent {
+					absentFiles += file + ", "
+				}
+				absentLabel.SetText(fmt.Sprintf("missing files in fource folder: %s", absent))
+			} else {
+				absentLabel.SetText("")
+			}
 		}, window)
 	})
 	destFolderButton := widget.NewButton("select destination folder", func() {
@@ -75,9 +93,9 @@ func MainScreen(window fyne.Window) fyne.CanvasObject {
 	label := container.NewCenter(widget.NewLabelWithStyle("aura-site website builder", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}))
 	source := container.NewHBox(sourceFolderButton, sourceLabel)
 	destination := container.NewHBox(destFolderButton, destLabel)
-	theme := container.NewVBox(themeSelector, requiredLabel)
+	themeDetails := container.NewVBox(themeSelector, requiredLabel)
 
-	screen := container.NewVBox(label, theme, source, destination, convertButton)
+	screen := container.NewVBox(label, themeDetails, source, destination, absentLabel, convertButton)
 
 	return screen
 

@@ -1,7 +1,6 @@
 package file
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -18,6 +17,32 @@ func (t themeSettings) GetRequired() []string {
 	return t.required
 }
 
+func (t themeSettings) CheckRequired(path string) (bool, []string, error) {
+	if path == "" {
+		return false, t.required, nil
+	}
+	files, err := getFiles(path)
+	if err != nil {
+		return false, t.required, err
+	}
+
+	absent := []string{}
+
+	for _, file := range t.required {
+		_, ok := files[file]
+		if !ok {
+			absent = append(absent, file)
+		}
+	}
+
+	if absent != nil {
+		return false, absent, nil
+	}
+
+	return true, nil, nil
+
+}
+
 func getSettings(css string) themeSettings {
 	return splitCommentToSettings(splitComment(getComment(css)), css)
 }
@@ -29,7 +54,6 @@ func getComment(css string) string {
 func splitComment(comment string) map[string]string {
 	commentMap := map[string]string{}
 	commentSplit := strings.Split(comment, "\n")
-	fmt.Println(commentSplit)
 	for _, field := range commentSplit {
 		keyAndVal := strings.Split(field, ":")
 		if len(keyAndVal) != 2 {
