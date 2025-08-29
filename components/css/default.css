@@ -2,23 +2,65 @@
     name: default
     required:
     optional: nav, sidebar, footer
-    priority: nav, content, sidebar, footer
+    priority: nav, MAINSTART, content, sidebar, MAINEND, footer
     about: Default theme, blue-grey and white. 2-column layout if sidebar element included. All elements are optional.
 */
+
+@font-face {
+    font-family: "Montserrat", sans-serif;
+    src: url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;1,300&display=swap');
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: normal;
+}
+
+* {
+    box-sizing: border-box;
+    font-family: "Montserrat", sans-serif;
+}
+
+body {
+    margin: 0;
+    background-color: slategray;
+    color: rgb(26, 31, 31);
+}
 
 nav {
     text-align: center;
     background-color: darkslategray;
     color: antiquewhite;
-    width: 100vw;
-    position: absolute;
-    left: 0px;
-    top: 0px;
-    margin: auto;
-    display: block;
+    padding: 10px;
+
+    height: 5vh;
 }
 
-nav>p>a {
+nav>a {
     padding: 20px;
     color: antiquewhite;
+}
+
+#main {
+    margin: 20px;
+    display: flex;
+}
+
+#content {
+    background-color: antiquewhite;
+    padding: 10px 25px;
+    margin: 0 2vw 0 13vw;
+    width: 50vw;
+}
+
+#sidebar {
+    background-color: antiquewhite;
+    padding: 10px 25px;
+    margin: 0 13vw 0 2vw;
+    width: 20vw;
+}
+
+#footer {
+    text-align: center;
+    background-color: darkslategray;
+    color: antiquewhite;
+    padding: 10px;
 }

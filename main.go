@@ -10,7 +10,7 @@ func main() {
 	app := app.New()
 	win := app.NewWindow("aura-site")
 
-	win.SetContent(gui.MainScreen(win))
+	win.SetContent(gui.GetMainScreen(win))
 	win.Resize(fyne.NewSize(640, 480))
 	win.ShowAndRun()
 }
