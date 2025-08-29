@@ -64,3 +64,7 @@ func FileToString(path string) (string, error) {
 	}
 	return string(file), nil
 }
+
+func CheckType(filename, filetype string) bool {
+	return strings.HasSuffix(filetype, filetype)
+}
