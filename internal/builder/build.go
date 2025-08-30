@@ -7,7 +7,6 @@ import (
 
 	"github.com/ffb6c1/aura-site/internal/config"
 	"github.com/ffb6c1/aura-site/internal/file"
-	"github.com/ffb6c1/aura-site/internal/markdown"
 )
 
 func Build() error {
@@ -25,7 +24,7 @@ func Build() error {
 
 	htmlPages := map[string]string{}
 	for name, content := range mdPages {
-		htmlPages[name] = markdown.Convert(content, "builder")
+		htmlPages[name] = gallery(content)
 	}
 
 	finalPages, err := buildTemplate(htmlPages)
