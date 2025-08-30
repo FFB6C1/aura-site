@@ -49,7 +49,7 @@ func (t ThemeSettings) CheckRequired(path string) (bool, []string, error) {
 		}
 	}
 
-	if absent != nil {
+	if len(absent) != 0 {
 		return false, absent, nil
 	}
 
@@ -67,7 +67,7 @@ func (t ThemeSettings) CheckRequiredFromMap(files map[string]string) (bool, []st
 		}
 	}
 
-	if absent != nil {
+	if len(absent) != 0 {
 		return false, absent
 	}
 

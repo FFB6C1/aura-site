@@ -12,7 +12,14 @@ func MakeDirectory(path string) error {
 		if os.IsExist(err) {
 			return nil
 		}
-		return err
+		return fmt.Errorf("could not create directory at %s: %w", path, err)
+	}
+	return nil
+}
+
+func WriteFileFromString(path, content string) error {
+	if err := os.WriteFile(path, []byte(content), 0o777); err != nil {
+		return fmt.Errorf("could not write file %s: %w", path, err)
 	}
 	return nil
 }

@@ -2,6 +2,7 @@ package builder
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/ffb6c1/aura-site/internal/config"
@@ -11,6 +12,11 @@ import (
 
 func Build() error {
 	config := config.GetConfig()
+	css := config.GetCSS()
+
+	if err := file.WriteFileFromString(filepath.Join(config.GetExportPath(), "styles.css"), css); err != nil {
+		return err
+	}
 
 	mdPages, err := file.GetMDFiles(config.GetImportPath())
 	if err != nil {
@@ -22,47 +28,86 @@ func Build() error {
 		htmlPages[name] = markdown.Convert(content, "builder")
 	}
 
-	if err := buildTemplate(htmlPages); err != nil {
+	finalPages, err := buildTemplate(htmlPages)
+	if err != nil {
+		return err
+	}
+
+	if err := createPages(finalPages, config.GetExportPath()); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func buildTemplate(pages map[string]string) error {
+func buildTemplate(pages map[string]string) (map[string]string, error) {
 	theme, ok := config.GetConfig().GetSelectedTheme()
 	if !ok {
-		return fmt.Errorf("no or unknown theme selected")
+		return nil, fmt.Errorf("no or unknown theme selected")
 	}
 	haveFiles, absentFiles := theme.CheckRequiredFromMap(pages)
 	if !haveFiles {
-		return fmt.Errorf("missing required files for selected theme: %v", absentFiles)
+		return nil, fmt.Errorf("missing required files for selected theme: %v", absentFiles)
 	}
 
 	wrapper, err := getHTMLWrapper()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	templateStart := wrapper[0]
-	templateEnd := wrapper[1]
+	templateEnd := "\n</div>"
 
 	priority, contentIndex := theme.GetPriorityAndContentIndex()
 	if contentIndex == -1 {
-		return fmt.Errorf("content not listed in theme priority settings")
+		return nil, fmt.Errorf("content not listed in theme priority settings")
 	}
 
 	for _, page := range priority[:contentIndex] {
-		templateStart += pages[page]
+		if page == "MAINSTART" {
+			templateStart += "\n<div id=\"main\">\n"
+			continue
+		}
+		if page == "MAINEND" {
+			templateStart += "\n</div>\n"
+			continue
+		}
+		templateStart += fmt.Sprintf("<div id=\"%s\">\n%s\n</div>\n", page, pages[page])
+		delete(pages, page)
 	}
 	templateStart += "\n<div id=\"content\">"
+
 	for _, page := range priority[contentIndex+1:] {
-		templateEnd = pages[page] + templateEnd
+		if page == "MAINSTART" {
+			templateEnd += "\n<div id=\"main\">\n"
+			continue
+		}
+		if page == "MAINEND" {
+			templateEnd += "\n</div>\n"
+			continue
+		}
+		templateEnd += fmt.Sprintf("<div id=\"%s\">\n%s\n</div>\n", page, pages[page])
+		delete(pages, page)
 	}
-	templateEnd = "\n</div>" + templateEnd
+	templateEnd += wrapper[1]
 
 	config.GetConfig().SetTemplate(templateStart, templateEnd)
 
+	return pages, nil
+}
+
+func createPages(pages map[string]string, exportPath string) error {
+	if err := file.MakeDirectory(exportPath); err != nil {
+		return err
+	}
+	for name, page := range pages {
+		template := config.GetConfig().GetTemplate()
+		fullPage := template[0] + page + template[1]
+		path := filepath.Join(exportPath, name+".html")
+		if err := file.WriteFileFromString(path, fullPage); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

@@ -25,6 +25,14 @@ func (c configStruct) GetImportPath() string {
 	return c.importPath
 }
 
+func (c *configStruct) SetExportPath(path string) {
+	c.exportPath = path
+}
+
+func (c configStruct) GetExportPath() string {
+	return c.exportPath
+}
+
 func (c *configStruct) SetThemes(themes map[string]ThemeSettings) {
 	c.themes = themes
 }
@@ -38,6 +46,10 @@ func (c configStruct) GetTheme(name string) (ThemeSettings, bool) {
 	return theme, ok
 }
 
+func (c *configStruct) SetSelectedTheme(theme string) {
+	c.selectedTheme = theme
+}
+
 func (c configStruct) GetSelectedTheme() (ThemeSettings, bool) {
 	if c.selectedTheme == "" {
 		return ThemeSettings{}, false
@@ -46,6 +58,14 @@ func (c configStruct) GetSelectedTheme() (ThemeSettings, bool) {
 	return theme, ok
 }
 
+func (c configStruct) GetCSS() string {
+	return c.themes[c.selectedTheme].full
+}
+
 func (c *configStruct) SetTemplate(templateStart, templateEnd string) {
 	c.template = append(c.template, templateStart, templateEnd)
+}
+
+func (c configStruct) GetTemplate() []string {
+	return c.template
 }
