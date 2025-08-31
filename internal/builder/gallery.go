@@ -10,6 +10,11 @@ import (
 	"github.com/ffb6c1/aura-site/internal/markdown"
 )
 
+type gallery struct {
+	path    string
+	imgData []img
+}
+
 type img struct {
 	name        string
 	filename    string
@@ -18,12 +23,13 @@ type img struct {
 	description string
 }
 
-func gallery(page string) string {
+func checkGallery(page string) (string, []gallery) {
 	if !strings.Contains(page, "!!!gallery") {
-		return markdown.Convert(page, "builder")
+		return markdown.Convert(page, "builder"), nil
 	}
 
 	splitPage := strings.Split(page, "!!!gallery[")
+	galleries := []gallery{}
 	newPage := markdown.Convert(splitPage[0], "builder")
 	for _, splitItem := range splitPage[1:] {
 		galleryDir, restOfItem, _ := strings.Cut(splitItem, "]")
@@ -31,14 +37,15 @@ func gallery(page string) string {
 			newPage += markdown.Convert(restOfItem, "builder")
 			continue
 		}
-		gallery := makeGallery(galleryDir)
-		newPage += gallery + markdown.Convert(restOfItem, "builder")
+		galHTML, gal := makeGallery(galleryDir)
+		newPage += galHTML + markdown.Convert(restOfItem, "builder")
+		galleries = append(galleries, gal)
 	}
 
-	return newPage
+	return newPage, galleries
 }
 
-func makeGallery(galleryDir string) string {
+func makeGallery(galleryDir string) (string, gallery) {
 	path := filepath.Join(config.GetConfig().GetImportPath(), galleryDir)
 	allImages, err := file.GetImgFiles(path)
 	if err != nil {
@@ -54,8 +61,20 @@ func makeGallery(galleryDir string) string {
 
 	fullImgData := buildImages(images, thumbs, alt, descs)
 
-	gallery := imagesToGallery(galleryDir, fullImgData)
-	return gallery
+	galHTML := imagesToGallery(galleryDir, fullImgData)
+
+	return galHTML, gallery{
+		path:    galleryDir,
+		imgData: fullImgData,
+	}
+}
+
+func finishGalleries(galleries []gallery) {
+	for _, gal := range galleries {
+		if err := makePagesForImages(gal.path, gal.imgData); err != nil {
+			fmt.Printf("could not make pages/could not copy images for %s", gal.path)
+		}
+	}
 }
 
 func sortImages(allImages [][]string) (map[string]string, map[string]string) {
@@ -66,7 +85,7 @@ func sortImages(allImages [][]string) (map[string]string, map[string]string) {
 			thumbs[name] = img[0] + "." + img[1]
 			continue
 		}
-		images[img[0]] = img[0] + img[1]
+		images[img[0]] = img[0] + "." + img[1]
 	}
 	return images, thumbs
 }
@@ -131,4 +150,78 @@ func imagesToGallery(galleryName string, images []img) string {
 	}
 
 	return "<div class=\"gallery\">\n" + noThumbnails + thumbnails + "</div>"
+}
+
+func makePagesForImages(galleryName string, imgData []img) error {
+	config := config.GetConfig()
+	galleryPath := filepath.Join(config.GetExportPath(), galleryName)
+	srcPath := filepath.Join(config.GetImportPath(), galleryName)
+	if err := file.MakeDirectory(galleryPath); err != nil {
+		return err
+	}
+
+	pages := map[string]string{}
+
+	for _, image := range imgData {
+		page := fmt.Sprintf("<img src=\"images/%s\" alt=\"%s\" class=\"galleryImg\">\n", image.filename, image.alt)
+		if image.description != "" {
+			page += markdown.Convert(image.description, "builder")
+		}
+		pages[image.name] = page
+	}
+	if err := createPages(pages, galleryPath); err != nil {
+		return err
+	}
+
+	if err := copyImages(srcPath, galleryPath, imgData); err != nil {
+		return err
+	}
+
+	css := config.GetCSS()
+
+	if err := file.WriteFileFromString(filepath.Join(galleryPath, "styles.css"), css); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func copyImages(srcPath, dstPath string, imgData []img) error {
+	imgPath, thumbsPath, err := makeImgDirs(dstPath)
+	if err != nil {
+		return err
+	}
+
+	for _, image := range imgData {
+		if image.thumb != "" {
+			thumb := filepath.Join(srcPath, image.thumb)
+			newThumb := filepath.Join(thumbsPath, image.thumb)
+			if err := file.CopyFile(thumb, newThumb); err != nil {
+				fmt.Println(err)
+				return err
+			}
+		}
+		imagePath := filepath.Join(srcPath, image.filename)
+		newImagePath := filepath.Join(imgPath, image.filename)
+		if err := file.CopyFile(imagePath, newImagePath); err != nil {
+			fmt.Println(err)
+			return err
+		}
+	}
+	return nil
+}
+
+func makeImgDirs(path string) (string, string, error) {
+	thumbsPath := filepath.Join(path, "thumbs")
+	imgPath := filepath.Join(path, "images")
+
+	if err := file.MakeDirectory(thumbsPath); err != nil {
+		fmt.Println("error making directory")
+		return "", "", err
+	}
+	if err := file.MakeDirectory(imgPath); err != nil {
+		fmt.Println("error making directory")
+		return "", "", err
+	}
+	return imgPath, thumbsPath, nil
 }

@@ -22,9 +22,13 @@ func Build() error {
 		return err
 	}
 
+	galleries := []gallery{}
+
 	htmlPages := map[string]string{}
 	for name, content := range mdPages {
-		htmlPages[name] = gallery(content)
+		html, gals := checkGallery(content)
+		htmlPages[name] = html
+		galleries = append(galleries, gals...)
 	}
 
 	finalPages, err := buildTemplate(htmlPages)
@@ -35,6 +39,8 @@ func Build() error {
 	if err := createPages(finalPages, config.GetExportPath()); err != nil {
 		return err
 	}
+
+	finishGalleries(galleries)
 
 	return nil
 }
@@ -99,8 +105,8 @@ func createPages(pages map[string]string, exportPath string) error {
 	if err := file.MakeDirectory(exportPath); err != nil {
 		return err
 	}
+	template := config.GetConfig().GetTemplate()
 	for name, page := range pages {
-		template := config.GetConfig().GetTemplate()
 		fullPage := template[0] + page + template[1]
 		path := filepath.Join(exportPath, name+".html")
 		if err := file.WriteFileFromString(path, fullPage); err != nil {

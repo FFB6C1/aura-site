@@ -2,6 +2,7 @@ package file
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -74,4 +75,24 @@ func FileToString(path string) (string, error) {
 
 func CheckType(filename, filetype string) bool {
 	return strings.HasSuffix(filetype, filetype)
+}
+
+func CopyFile(sourcePath, destPath string) error {
+	file, err := os.Open(sourcePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	newFile, err := os.Create(destPath)
+	if err != nil {
+		return err
+	}
+	defer newFile.Close()
+
+	_, err = io.Copy(newFile, file)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
