@@ -82,6 +82,36 @@ func (t ThemeSettings) GetName() string {
 	return t.name
 }
 
+func (t ThemeSettings) GetAbout() string {
+	return t.about
+}
+
+func (t ThemeSettings) GetOptional() []string {
+	return t.optional
+}
+
+func (t ThemeSettings) GetOptionalAsString() string {
+	optional := ""
+	for _, item := range t.optional {
+		optional += ", " + item
+	}
+	if optional == "" {
+		return "None"
+	}
+	return optional[2:]
+}
+
+func (t ThemeSettings) GetRequiredAsString() string {
+	required := ""
+	for _, item := range t.required {
+		required += ", " + item
+	}
+	if required == "" {
+		return "None"
+	}
+	return required[2:]
+}
+
 func getMDFiles(path string) (map[string]string, error) {
 	files, err := os.ReadDir(path)
 	if err != nil {
